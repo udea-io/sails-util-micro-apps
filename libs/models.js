@@ -4,37 +4,48 @@
 
 const buildDictionary = require('sails-build-dictionary');
 
-module.exports = function(sails, dir, cb) {
-    // sails.log.info(`dir: %s, cb: %s`, dir, cb);
-    // sails.log.info(`sails models: `, sails.models);
+module.exports = function (sails, dir, cb) {
+  // sails.log.info(`dir: %s, cb: %s`, dir, cb);
+  // sails.log.info(`sails models: `, sails.models);
 
-    buildDictionary.optional({
-        dirname: dir,
-        filter: /^([^.]+)\.(js|coffee|litcoffee)$/,
-        replaceExpr: /^.*\//,
-        flattenDirectories: true
-    }, function(err, models) {
-        if (err) {
+  buildDictionary.optional(
+    {
+      dirname: dir,
+      filter: /^([^.]+)\.(js|coffee|litcoffee)$/,
+      replaceExpr: /^.*\//,
+      flattenDirectories: true,
+    },
+    function (err, models) {
+      if (err) {
+        return cb(err);
+      }
+
+      // Get any supplemental files
+      buildDictionary.optional(
+        {
+          dirname: dir,
+          filter: /(.+)\.attributes.json$/,
+          replaceExpr: /^.*\//,
+          flattenDirectories: true,
+        },
+        function (err, supplements) {
+          if (err) {
             return cb(err);
-        }
+          }
 
-        // Get any supplemental files
-        buildDictionary.optional({
-            dirname: dir,
-            filter: /(.+)\.attributes.json$/,
-            replaceExpr: /^.*\//,
-            flattenDirectories: true
-        }, function(err, supplements) {
-            if (err) {
-                return cb(err);
-            }
+          let finalModels = _.merge(models, supplements);
 
-            let finalModels = _.merge(models, supplements);
+          if (sails.hooks.orm) {
+            sails.hooks.orm.models = _.merge(
+              finalModels || {},
+              sails.hooks.orm.models || {},
+            );
+          }
+          sails.models = _.merge(finalModels || {}, sails.models || {});
 
-            sails.hooks.orm.models = _.merge(finalModels || {}, sails.hooks.orm.models || {});
-            sails.models = _.merge(finalModels || {}, sails.models || {});
-
-            cb();
-        });
-    });
+          cb();
+        },
+      );
+    },
+  );
 };
