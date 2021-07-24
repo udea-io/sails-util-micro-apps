@@ -65,7 +65,7 @@
     "mocha": "^5.2.0",
     "proxy-addr": "^2.0.4",
     "sails": "^1.0.2",
-    "contrace": ">0.7",
+    "contrace": "^0.7.3",
     "sails-hook-orm": "^2.1.0"
   }
 }
